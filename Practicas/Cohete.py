@@ -1,7 +1,6 @@
 # CON MOVIMIENTO EN LAS CUATRO DIRECCIONES
 # ARRIBA - ABAJO - IZQUIERDA Y DERECHA
 #
-
 import pygame
 import random
 
@@ -9,7 +8,7 @@ import random
 pygame.init()
 
 # Configuración de la pantalla
-WIDTH, HEIGHT = 800, 600
+WIDTH, HEIGHT = 1280, 960
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Cohete, Estrellas y Asteroides")
 
@@ -17,10 +16,33 @@ pygame.display.set_caption("Cohete, Estrellas y Asteroides")
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 
-# Cargar imágenes
-cohete_img = pygame.image.load("cohete.png")
-estrella_img = pygame.image.load("estrella.png")
-asteroide_img = pygame.image.load("asteroide.png")
+# Cargar imágenes y escalarlas al 50%
+try:
+    cohete_img = pygame.image.load("cohete.jpg")
+    estrella_img = pygame.image.load("estrella.jpg")
+    asteroide_img = pygame.image.load("asteroide.jpg")
+except pygame.error as e:
+    print(f"Error cargando imágenes: {e}")
+    pygame.quit()
+    exit()
+
+# Escalar imágenes al 50%
+cohete_img = pygame.transform.scale(cohete_img, (cohete_img.get_width() // 2, cohete_img.get_height() // 2))
+estrella_img = pygame.transform.scale(estrella_img, (estrella_img.get_width() // 2, estrella_img.get_height() // 2))
+asteroide_img = pygame.transform.scale(asteroide_img, (asteroide_img.get_width() // 2, asteroide_img.get_height() // 2))
+
+# Cargar sonidos
+try:
+    pygame.mixer.music.load("musica_fondo.mp3")  # Música de fondo
+    choque_asteroide_sonido = pygame.mixer.Sound("choque_asteroide.mp3")  # Sonido de choque con asteroide
+    choque_estrella_sonido = pygame.mixer.Sound("choque_estrella.mp3")  # Sonido de choque con estrella
+except pygame.error as e:
+    print(f"Error cargando sonidos: {e}")
+    pygame.quit()
+    exit()
+
+# Reproducir música de fondo en bucle
+pygame.mixer.music.play(-1)
 
 # Clase Cohete
 class Cohete(pygame.sprite.Sprite):
@@ -37,9 +59,9 @@ class Cohete(pygame.sprite.Sprite):
             self.rect.x -= self.speed
         if keys[pygame.K_RIGHT] and self.rect.right < WIDTH:
             self.rect.x += self.speed
-        if keys[pygame.K_UP] and self.rect.top > 0:
+        if keys[pygame.K_UP] and self.rect.top > 0:  # Mover hacia arriba
             self.rect.y -= self.speed
-        if keys[pygame.K_DOWN] and self.rect.bottom < HEIGHT:
+        if keys[pygame.K_DOWN] and self.rect.bottom < HEIGHT:  # Mover hacia abajo
             self.rect.y += self.speed
 
 # Clase Estrella
@@ -48,14 +70,14 @@ class Estrella(pygame.sprite.Sprite):
         super().__init__()
         self.image = estrella_img
         self.rect = self.image.get_rect()
-        self.rect.x = random.randint(0, WIDTH - 20)
+        self.rect.x = random.randint(0, WIDTH - self.rect.width)
         self.rect.y = random.randint(-100, -20)
         self.speed = random.randint(1, 3)
 
     def update(self):
         self.rect.y += self.speed
         if self.rect.top > HEIGHT:
-            self.rect.x = random.randint(0, WIDTH - 20)
+            self.rect.x = random.randint(0, WIDTH - self.rect.width)
             self.rect.y = random.randint(-100, -20)
             self.speed = random.randint(1, 3)
 
@@ -65,14 +87,14 @@ class Asteroide(pygame.sprite.Sprite):
         super().__init__()
         self.image = asteroide_img
         self.rect = self.image.get_rect()
-        self.rect.x = random.randint(0, WIDTH - 30)
+        self.rect.x = random.randint(0, WIDTH - self.rect.width)
         self.rect.y = random.randint(-100, -30)
         self.speed = random.randint(2, 5)
 
     def update(self):
         self.rect.y += self.speed
         if self.rect.top > HEIGHT:
-            self.rect.x = random.randint(0, WIDTH - 30)
+            self.rect.x = random.randint(0, WIDTH - self.rect.width)
             self.rect.y = random.randint(-100, -30)
             self.speed = random.randint(2, 5)
 
@@ -97,6 +119,7 @@ def main():
 
     score = 0
     vidas = 5
+    ultimo_puntaje_vida = 0  # Para rastrear cuándo se otorgó la última vida
     running = True
 
     while running:
@@ -110,6 +133,7 @@ def main():
         hits_estrellas = pygame.sprite.spritecollide(cohete, estrellas, True)
         for hit in hits_estrellas:
             score += 10
+            choque_estrella_sonido.play()  # Reproducir sonido de choque con estrella
             estrella = Estrella()
             estrellas.add(estrella)
             all_sprites.add(estrella)
@@ -118,20 +142,26 @@ def main():
         hits_asteroides = pygame.sprite.spritecollide(cohete, asteroides, True)
         for hit in hits_asteroides:
             vidas -= 1
+            choque_asteroide_sonido.play()  # Reproducir sonido de choque con asteroide
             if vidas <= 0:
                 running = False
             asteroide = Asteroide()
             asteroides.add(asteroide)
             all_sprites.add(asteroide)
 
+        # Otorgar una vida cada 500 puntos
+        if score // 500 > ultimo_puntaje_vida // 500:
+            vidas += 1
+            ultimo_puntaje_vida = score  # Actualizar el último puntaje en el que se otorgó una vida
+
         # Dibujar en pantalla
-        screen.fill(BLACK)
+        screen.fill(WHITE)  # Fondo blanco
         all_sprites.draw(screen)
 
         # Mostrar puntuación y vidas
         font = pygame.font.Font(None, 36)
-        score_text = font.render(f"Puntuación: {score}", True, WHITE)
-        vidas_text = font.render(f"Vidas: {vidas}", True, WHITE)
+        score_text = font.render(f"Puntuación: {score}", True, BLACK)  # Texto negro
+        vidas_text = font.render(f"Vidas: {vidas}", True, BLACK)  # Texto negro
         screen.blit(score_text, (10, 10))
         screen.blit(vidas_text, (10, 50))
 
@@ -140,7 +170,7 @@ def main():
 
     # Game Over
     font = pygame.font.Font(None, 74)
-    game_over_text = font.render("Game Over", True, WHITE)
+    game_over_text = font.render("Game Over", True, BLACK)  # Texto negro
     screen.blit(game_over_text, (WIDTH // 2 - 140, HEIGHT // 2 - 50))
     pygame.display.flip()
     pygame.time.wait(3000)
@@ -149,3 +179,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
