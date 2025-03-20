@@ -1,6 +1,3 @@
-# CON MOVIMIENTO EN LAS CUATRO DIRECCIONES
-# ARRIBA - ABAJO - IZQUIERDA Y DERECHA
-#
 import pygame
 import random
 
@@ -27,9 +24,9 @@ except pygame.error as e:
     exit()
 
 # Escalar imágenes al 50%
-cohete_img = pygame.transform.scale(cohete_img, (cohete_img.get_width() // 2, cohete_img.get_height() // 2))
+# cohete_img = pygame.transform.scale(cohete_img, (cohete_img.get_width() // 2, cohete_img.get_height() // 2))
 estrella_img = pygame.transform.scale(estrella_img, (estrella_img.get_width() // 2, estrella_img.get_height() // 2))
-asteroide_img = pygame.transform.scale(asteroide_img, (asteroide_img.get_width() // 2, asteroide_img.get_height() // 2))
+asteroide_img = pygame.transform.scale(asteroide_img, (asteroide_img.get_width() // 4, asteroide_img.get_height() // 4))
 
 # Cargar sonidos
 try:
@@ -120,6 +117,7 @@ def main():
     score = 0
     vidas = 5
     ultimo_puntaje_vida = 0  # Para rastrear cuándo se otorgó la última vida
+    ultimo_puntaje_velocidad = 0  # Para rastrear cuándo se aumentó la velocidad por última vez
     running = True
 
     while running:
@@ -149,10 +147,26 @@ def main():
             asteroides.add(asteroide)
             all_sprites.add(asteroide)
 
-        # Otorgar una vida cada 500 puntos
-        if score // 500 > ultimo_puntaje_vida // 500:
+        # Otorgar una vida cada 100 puntos
+        if score // 100 > ultimo_puntaje_vida // 100:
             vidas += 1
             ultimo_puntaje_vida = score  # Actualizar el último puntaje en el que se otorgó una vida
+
+        # Aumentar la velocidad y la cantidad de asteroides cada 100 puntos
+        if score // 100 > ultimo_puntaje_velocidad // 100:
+            # Aumentar la velocidad de las estrellas y asteroides
+            for estrella in estrellas:
+                estrella.speed += 1  # Aumentar la velocidad de las estrellas
+            for asteroide in asteroides:
+                asteroide.speed += 1  # Aumentar la velocidad de los asteroides
+
+            # Añadir un nuevo asteroide
+            if len(asteroides) < 10:  # Límite máximo de 10 asteroides
+                nuevo_asteroide = Asteroide()
+                asteroides.add(nuevo_asteroide)
+                all_sprites.add(nuevo_asteroide)
+
+            ultimo_puntaje_velocidad = score  # Actualizar el último puntaje en el que se aumentó la velocidad
 
         # Dibujar en pantalla
         screen.fill(WHITE)  # Fondo blanco
@@ -179,4 +193,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
